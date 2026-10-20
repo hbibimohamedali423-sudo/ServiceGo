@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ServiceGo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--bg:#070b14;--card:#0e1525;--bd:#1c2a45;--pr:#1f6bff;--pu:#8b3dff;--gr:#14b88a;--or:#f59e0b;--mu:#8a97b2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;padding-top:env(safe-area-inset-top)}
+#app{max-width:520px;margin:0 auto;min-height:100vh;position:relative}
+.glow{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 30%,#0b2a5b,var(--bg) 70%)}
+.logo{font-size:84px;font-weight:900;font-style:italic;line-height:1;background:linear-gradient(135deg,#3aa0ff,#1f4fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand{font-size:34px;font-weight:800;margin:6px 0}.brand b{color:var(--pr)}
+.mu{color:var(--mu)}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{background:var(--pr);border:0;border-radius:12px;padding:14px;width:100%;font-weight:700;cursor:pointer;margin-top:10px}
+.btn.o{background:transparent;border:1px solid var(--bd)}
+.link{background:none;border:0;color:var(--pr);font-size:17px;cursor:pointer;padding:10px}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:13px;margin-top:10px}
+.lang{position:absolute;top:12px;inset-inline-end:12px;width:auto;padding:8px}
+.type{display:flex;align-items:center;gap:12px;width:100%;text-align:start;border-radius:14px;padding:14px;margin-top:12px;cursor:pointer;background:none}
+.type small{display:block;color:var(--mu)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:12px;cursor:pointer}.row>div:nth-child(2){flex:1;min-width:0}
+.ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#1f6bff26}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:600;display:inline-block}
+.page{padding:16px 16px 90px}
+h2{margin:6px 0 14px;font-size:19px;text-align:center}
+.stats{display:flex;gap:8px;margin:14px 0}.stats .card{flex:1;text-align:center;margin:0}.stats b{display:block;font-size:24px;margin-top:4px}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:auto;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;background:none;border:0;padding:10px 0;color:var(--mu);font-size:11px;cursor:pointer}.nav button.on{color:var(--pr)}.nav i{display:block;font-size:20px;font-style:normal}
+.chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}.chips button{white-space:nowrap;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;cursor:pointer}.chips .on{background:var(--pr)}
+.fab{position:fixed;bottom:80px;inset-inline-end:max(16px,calc(50% - 244px));width:52px;height:52px;border-radius:50%;background:var(--pr);border:0;font-size:28px;cursor:pointer}
+.kv{display:flex;gap:10px;padding:7px 0}.kv span:first-child{width:105px;color:var(--mu);font-size:13px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:130px}.bars div{flex:1;text-align:center;font-size:10px;color:var(--mu);display:flex;flex-direction:column;justify-content:flex-end;height:100%}.bars i{display:block;background:var(--pr);border-radius:4px 4px 0 0;min-height:2px}
+.donut{width:120px;height:120px;border-radius:50%;display:grid;place-items:center}.donut span{background:var(--card);width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-weight:800}
+#map{height:calc(100vh - 150px);border-radius:16px}
+.imgs{display:flex;gap:8px;overflow-x:auto;margin:8px 0}.imgs img{width:70px;height:70px;object-fit:cover;border-radius:10px}
+#modal{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-end;justify-content:center;z-index:999}#modal>div{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px}
+.msg{color:#ffb4b4;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const SUPABASE_URL='https://wwxqpqibvvohjiygieib.supabase.co';
+const SUPABASE_KEY='sb_publishable_2TIt4qQbezm7f1bQiH9Z7A_g4S-uf9r';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// [ar, en, de]
+const R={
+tagline:['ذكاء متصل... خدمة بلا حدود','Smart Connected... Limitless Service','Intelligent verbunden... Grenzenloser Service'],
+start:['ابدأ الآن','Get Started','Loslegen'],choose:['اختر نوع الحساب','Choose the account type','Wählen Sie den Kontotyp'],
+client:['عميل','Client','Kunde'],clientS:['طلب الخدمات ومتابعتها','Request and follow up','Anfragen und verfolgen'],
+worker:['فني','Worker','Dienstleister'],workerS:['استقبال وتنفيذ المهام','Receive and carry out tasks','Aufgaben ausführen'],
+manager:['مدير','Manager','Manager'],managerS:['إدارة الفرق والتقارير','Manage teams and reports','Teams und Berichte verwalten'],
+mgrNote:['حسابات المدير ينشئها المسؤول فقط','Manager accounts are created by an administrator','Manager-Konten erstellt der Administrator'],
+email:['البريد الإلكتروني','Email','E-Mail'],pass:['كلمة المرور','Password','Passwort'],name:['الاسم الكامل','Full name','Name'],
+login:['تسجيل الدخول','Log in','Anmelden'],signup:['إنشاء حساب','Sign up','Registrieren'],
+toSignup:['ليس لديك حساب؟ أنشئ حساباً','No account? Sign up','Noch kein Konto? Registrieren'],toLogin:['لديك حساب؟ سجّل الدخول','Have an account? Log in','Schon ein Konto? Anmelden'],
+checkEmail:['تحقق من بريدك لتأكيد الحساب','Check your email to confirm','Bitte E-Mail bestätigen'],err:['حدث خطأ، حاول مرة أخرى','Something went wrong','Fehler aufgetreten'],
+home:['الرئيسية','Home','Start'],tasks:['المهام','Tasks','Aufgaben'],map:['الخريطة','Map','Karte'],reports:['التقارير','Reports','Berichte'],profile:['حسابي','Profile','Profil'],
+done:['مكتملة','Completed','Abgeschlossen'],prog:['قيد التنفيذ','In Progress','In Bearbeitung'],total:['الإجمالي','Total','Gesamt'],pend:['قيد الانتظار','Pending','Ausstehend'],
+all:['الكل','All','Alle'],none:['لا توجد مهام','No tasks yet','Keine Aufgaben'],title:['العنوان','Title','Titel'],cat:['الفئة','Category','Kategorie'],
+loc:['الموقع','Location','Standort'],desc:['الوصف','Description','Beschreibung'],save:['حفظ','Save','Speichern'],newTask:['مهمة جديدة','New task','Neue Aufgabe'],
+details:['تفاصيل المهمة','Task Details','Aufgabendetails'],code:['رقم المهمة','Task ID','Aufgaben-ID'],when:['التاريخ والوقت','Date & Time','Datum & Uhrzeit'],
+att:['المرفقات','Attachments','Anhänge'],markDone:['تحديد كمكتملة','Mark as Completed','Als erledigt markieren'],startTask:['بدء المهمة','Start task','Aufgabe starten'],
+assign:['إسناد إلى فني','Assign worker','Dienstleister zuweisen'],contact:['تواصل مع العميل','Contact Client','Kunden kontaktieren'],nav:['ابدأ الملاحة','Navigate','Navigieren'],
+week:['المهام المنجزة هذا الأسبوع','Completed this week','Diese Woche abgeschlossen'],dist:['توزيع المهام','Task Distribution','Aufgabenverteilung'],
+logout:['تسجيل الخروج','Log out','Abmelden'],lang:['اللغة','Language','Sprache'],hello:['مرحباً','Hello','Hallo'],back:['رجوع','Back','Zurück'],
+s_pending:['قيد الانتظار','Pending','Ausstehend'],s_scheduled:['مجدولة','Scheduled','Geplant'],s_in_progress:['قيد التنفيذ','In Progress','In Bearbeitung'],s_completed:['مكتملة','Completed','Abgeschlossen']
+};
+const LI={ar:0,en:1,de:2};
+const COL={pending:'#f59e0b',scheduled:'#8b3dff',in_progress:'#1f6bff',completed:'#14b88a'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let S={lang:'ar',screen:'splash',role:'client',signup:false,user:null,profile:null,tasks:[],tab:'home',filter:'all',detail:null,urls:[],workers:[],msg:'',map:null,ch:null};
+try{S.lang=localStorage.getItem('sg_lang')||'ar'}catch(e){}
+const t=k=>(R[k]&&R[k][LI[S.lang]])||k;
+const chip=s=>`<span class="chip" style="background:${COL[s]}2e;color:${COL[s]}">${t('s_'+s)}</span>`;
+function setLang(l){S.lang=l;try{localStorage.setItem('sg_lang',l)}catch(e){}render()}
+const langSel=()=>`<select class="lang" onchange="setLang(this.value)"><option value="ar" ${S.lang=='ar'?'selected':''}>العربية</option><option value="en" ${S.lang=='en'?'selected':''}>English</option><option value="de" ${S.lang=='de'?'selected':''}>Deutsch</option></select>`;
+const logo=s=>`<div class="logo" style="font-size:${s||84}px">S</div><div class="brand">Service <b>Go</b></div>`;
+
+/* ---------- data ---------- */
+async function loadTasks(){const{data}=await sb.from('tasks').select('*').order('created_at',{ascending:false});S.tasks=data||[]}
+async function loadAll(){
+  const{data}=await sb.from('profiles').select('*').eq('id',S.user.id).maybeSingle();
+  S.profile=data||{id:S.user.id,full_name:'',role:'client'};
+  await loadTasks();
+}
+function subscribe(){
+  if(S.ch)return;
+  S.ch=sb.channel('tasks-live').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},async()=>{await loadTasks();if(!$('#modal'))render()}).subscribe();
+}
+sb.auth.onAuthStateChange((ev,ses)=>{
+  if(ev==='TOKEN_REFRESHED')return;
+  setTimeout(async()=>{
+    if(ses){S.user=ses.user;await loadAll();S.screen=S.screen==='detail'?'detail':'app';subscribe()}
+    else{S.user=null;S.profile=null;S.tasks=[];if(S.ch){sb.removeChannel(S.ch);S.ch=null}S.screen='splash'}
+    render();
+  },0);
+});
+
+/* ---------- auth ---------- */
+function pick(r){S.role=r;S.signup=false;S.msg='';S.screen='auth';render()}
+async function submitAuth(){
+  const email=$('#em').value.trim(),pw=$('#pw').value;S.msg='';
+  try{
+    if(S.signup){
+      const{data,error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:($('#nm')||{}).value||'',role:S.role}}});
+      if(error)throw error;if(!data.session){S.msg=t('checkEmail');render()}
+    }else{const{error}=await sb.auth.signInWithPassword({email,password:pw});if(error)throw error}
+  }catch(e){S.msg=e.message||t('err');render()}
+}
+
+/* ---------- views ---------- */
+function taskRow(x){return `<div class="card row" onclick="openTask('${x.id}')"><div class="ic">🔧</div><div><div class="ell"><b>${esc(x.title)}</b></div><div class="mu ell" style="font-size:12px">${esc([x.category,x.location_text].filter(Boolean).join(' • '))}</div></div><div>${chip(x.status)}</div></div>`}
+function vSplash(){return `<div class="glow">${langSel()}${logo()}<p class="mu">${t('tagline')}</p><button class="link" style="margin-top:60px" onclick="S.screen='type';render()">${t('start')}</button></div>`}
+function vType(){
+  const c=(r,col,ic)=>`<button class="type" style="border:1px solid ${col}99;background:${col}1f" onclick="pick('${r}')"><span style="font-size:26px">${ic}</span><span><b style="color:${col}">${t(r)}</b><small>${t(r+'S')}</small></span></button>`;
+  return `<div class="glow">${langSel()}<div class="mu">${t('start')==''?'':''}</div>${logo(48)}<p class="mu">${t('choose')}</p><div style="width:100%">${c('client','#1f6bff','👤')}${c('worker','#8b3dff','🛠')}${c('manager','#14b88a','🛡')}</div></div>`}
+function vAuth(){
+  const m=S.role==='manager';
+  return `<div class="glow">${langSel()}${logo(40)}<h2>${t(S.role)}</h2><div style="width:100%">${S.signup?`<input id="nm" placeholder="${t('name')}">`:''}<input id="em" type="email" placeholder="${t('email')}"><input id="pw" type="password" placeholder="${t('pass')}"><button class="btn" onclick="submitAuth()">${t(S.signup?'signup':'login')}</button>${m?`<p class="mu" style="font-size:12px">${t('mgrNote')}</p>`:`<button class="link" onclick="S.signup=!S.signup;S.msg='';render()">${t(S.signup?'toLogin':'toSignup')}</button>`}<div class="msg">${esc(S.msg)}</div><button class="link mu" onclick="S.screen='type';render()">${t('back')}</button></div></div>`}
+function vHome(){
+  const n=s=>S.tasks.filter(x=>x.status===s).length;
+  return `<div class="page"><h2>${t('home')}</h2><div class="card row"><div class="ic" style="width:50px;height:50px">${esc((S.profile.full_name||'?')[0]).toUpperCase()}</div><div><b>${t('hello')} ${esc(S.profile.full_name)}</b><div style="color:var(--pr);font-size:12px">${t(S.profile.role)}</div></div></div>
+  <div class="stats"><div class="card"><span class="mu">${t('done')}</span><b style="color:var(--gr)">${n('completed')}</b></div><div class="card"><span class="mu">${t('prog')}</span><b style="color:var(--pr)">${n('in_progress')}</b></div><div class="card"><span class="mu">${t('total')}</span><b>${S.tasks.length}</b></div></div>
+  ${S.tasks.length?S.tasks.slice(0,5).map(taskRow).join(''):`<p class="mu" style="text-align:center">${t('none')}</p>`}</div>`}
+function vTasks(){
+  const f=S.filter,ok=x=>f==='all'||(f==='pending'?['pending','scheduled'].includes(x.status):x.status===f);
+  const l=S.tasks.filter(ok);
+  return `<div class="page"><h2>${t('tasks')}</h2><div class="chips">${['all','in_progress','pending','completed'].map(k=>`<button class="${f==k?'on':''}" onclick="S.filter='${k}';render()">${k=='all'?t('all'):t('s_'+k)}</button>`).join('')}</div>${l.length?l.map(taskRow).join(''):`<p class="mu" style="text-align:center">${t('none')}</p>`}</div>${S.profile.role!=='worker'?`<button class="fab" onclick="openNew()">+</button>`:''}`}
+function vMap(){return `<div class="page"><h2>${t('map')}</h2><div id="map"></div></div>`}
+function vReports(){
+  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-(6-i));return d});
+  const cnt=days.map(d=>S.tasks.filter(x=>x.completed_at&&new Date(x.completed_at).toDateString()===d.toDateString()).length);
+  const mx=Math.max(1,...cnt),tot=S.tasks.length||1;
+  const a=S.tasks.filter(x=>x.status==='completed').length,b=S.tasks.filter(x=>x.status==='in_progress').length,c=S.tasks.length-a-b;
+  const pa=a/tot*100,pb=pa+b/tot*100;
+  return `<div class="page"><h2>${t('reports')}</h2><div class="card"><div class="mu">${t('week')}</div><b style="font-size:28px">${cnt.reduce((x,y)=>x+y,0)}</b><div class="bars" style="margin-top:10px">${cnt.map((v,i)=>`<div><i style="height:${v/mx*100}%"></i>${days[i].toLocaleDateString(S.lang,{weekday:'short'})}</div>`).join('')}</div></div>
+  <div class="card"><b>${t('dist')}</b><div class="row" style="cursor:default;margin-top:12px"><div class="donut" style="flex:none;background:${S.tasks.length?`conic-gradient(var(--gr) 0 ${pa}%,var(--pr) ${pa}% ${pb}%,var(--or) ${pb}% 100%)`:'var(--bd)'}"><span>${Math.round(pa)}%</span></div><div style="font-size:13px"><p style="color:var(--gr)">● ${t('done')} ${a}</p><p style="color:var(--pr)">● ${t('prog')} ${b}</p><p style="color:var(--or)">● ${t('pend')} ${c}</p></div></div></div></div>`}
+function vProfile(){
+  return `<div class="page"><h2>${t('profile')}</h2><div class="card" style="text-align:center"><div class="logo" style="font-size:44px">${esc((S.profile.full_name||'?')[0]).toUpperCase()}</div><b>${esc(S.profile.full_name)}</b><div style="color:var(--pr)">${t(S.profile.role)}</div><div class="mu" style="font-size:12px">${esc(S.user.email)}</div></div><div class="card"><b>${t('lang')}</b><div class="chips" style="margin:10px 0 0">${[['ar','العربية'],['en','English'],['de','Deutsch']].map(([k,n])=>`<button class="${S.lang==k?'on':''}" onclick="setLang('${k}')">${n}</button>`).join('')}</div></div><button class="btn o" style="color:#ff7b7b" onclick="sb.auth.signOut()">${t('logout')}</button></div>`}
+function vDetail(){
+  const x=S.detail,p=S.profile,work=p.role!=='client',kv=(k,v)=>`<div class="kv"><span>${t(k)}</span><span>${esc(v)||'-'}</span></div>`;
+  return `<div class="page"><button class="link" onclick="S.screen='app';render()">← ${t('back')}</button><div class="row" style="cursor:default;margin:6px 0 12px"><h2 style="margin:0;flex:1;text-align:start">${esc(x.title)}</h2>${chip(x.status)}</div>
+  <div class="card">${kv('code',x.code)}${kv('cat',x.category)}${kv('loc',x.location_text)}${kv('when',x.scheduled_at?new Date(x.scheduled_at).toLocaleString(S.lang):'')}${kv('desc',x.description)}</div>
+  <b>${t('att')}</b><div class="imgs">${S.urls.map(u=>`<img src="${esc(u)}" alt="">`).join('')}<label class="card" style="width:70px;height:70px;margin:0;display:grid;place-items:center;cursor:pointer">📷<input type="file" accept="image/*" hidden onchange="upload(this)"></label></div>
+  ${work&&x.status!=='completed'?`<button class="btn" onclick="setStatus('completed')">${t('markDone')}</button>${['pending','scheduled'].includes(x.status)?`<button class="btn o" onclick="setStatus('in_progress')">${t('startTask')}</button>`:''}`:''}
+  ${p.role==='manager'?`<select onchange="assign(this.value)"><option value="">${t('assign')}</option>${S.workers.map(w=>`<option value="${w.id}" ${x.worker_id==w.id?'selected':''}>${esc(w.full_name)}</option>`).join('')}</select>`:''}
+  ${work&&x.client_id?`<button class="btn o" onclick="contact()">📞 ${t('contact')}</button>`:''}</div>`}
+function vApp(){
+  const v={home:vHome,tasks:vTasks,map:vMap,reports:vReports,profile:vProfile}[S.tab]();
+  const n=[['home','🏠'],['tasks','✅'],['map','🗺'],['reports','📊'],['profile','👤']];
+  return v+`<div class="nav">${n.map(([k,i])=>`<button class="${S.tab==k?'on':''}" onclick="S.tab='${k}';render()"><i>${i}</i>${t(k)}</button>`).join('')}</div>`}
+
+function render(){
+  document.documentElement.lang=S.lang;document.documentElement.dir=S.lang==='ar'?'rtl':'ltr';
+  if(S.map){S.map.remove();S.map=null}
+  const f={splash:vSplash,type:vType,auth:vAuth,app:vApp,detail:vDetail}[S.screen];
+  $('#app').innerHTML=S.screen==='app'&&!S.profile?'':f();
+  if(S.screen==='app'&&S.tab==='map')setTimeout(initMap,0);
+}
+
+/* ---------- actions ---------- */
+function initMap(){
+  const el=$('#map');if(!el||!window.L)return;
+  const pts=S.tasks.filter(x=>x.lat!=null&&x.lng!=null);
+  const m=L.map(el).setView(pts.length?[pts[0].lat,pts[0].lng]:[36.8065,10.1815],11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:19,attribution:'© OpenStreetMap © CARTO'}).addTo(m);
+  pts.forEach(p=>L.circleMarker([p.lat,p.lng],{radius:9,color:COL[p.status],fillOpacity:.8}).addTo(m).bindPopup(`<b>${esc(p.title)}</b><br><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">${t('nav')}</a>`));
+  S.map=m;
+}
+async function openTask(id){
+  S.detail=S.tasks.find(x=>x.id===id);S.urls=[];S.screen='detail';render();
+  if(S.profile.role==='manager'){const{data}=await sb.from('profiles').select('id,full_name').eq('role','worker');S.workers=data||[];render()}
+  loadAtt();
+}
+async function loadAtt(){
+  const{data}=await sb.from('task_attachments').select('file_path').eq('task_id',S.detail.id);
+  const paths=(data||[]).map(r=>r.file_path);if(!paths.length){S.urls=[];return}
+  const r=await sb.storage.from('task-files').createSignedUrls(paths,3600);
+  S.urls=(r.data||[]).map(x=>x.signedUrl).filter(Boolean);if(S.screen==='detail')render();
+}
+async function setStatus(s){
+  const{error}=await sb.from('tasks').update({status:s}).eq('id',S.detail.id);
+  if(error)return alert(t('err'));S.detail.status=s;render();
+}
+async function assign(id){
+  if(!id)return;
+  const{error}=await sb.from('tasks').update({worker_id:id,status:'scheduled'}).eq('id',S.detail.id);
+  if(error)return alert(t('err'));S.detail.worker_id=id;S.detail.status='scheduled';render();
+}
+async function upload(inp){
+  const f=inp.files[0];if(!f)return;
+  const path=`${S.detail.id}/${Date.now()}_${f.name.replace(/[^\w.-]/g,'_')}`;
+  let r=await sb.storage.from('task-files').upload(path,f,{contentType:f.type});
+  if(r.error)return alert(t('err'));
+  await sb.from('task_attachments').insert({task_id:S.detail.id,file_path:path});loadAtt();
+}
+async function contact(){
+  const{data}=await sb.from('profiles').select('phone').eq('id',S.detail.client_id).maybeSingle();
+  if(data&&data.phone)location.href='tel:'+data.phone;
+}
+function openNew(){
+  const d=document.createElement('div');d.id='modal';
+  d.innerHTML=`<div><h2>${t('newTask')}</h2><input id="n_t" placeholder="${t('title')}"><input id="n_c" placeholder="${t('cat')}"><input id="n_l" placeholder="${t('loc')}"><div style="display:flex;gap:8px"><input id="n_la" placeholder="lat" inputmode="decimal"><input id="n_ln" placeholder="lng" inputmode="decimal"></div><textarea id="n_d" rows="2" placeholder="${t('desc')}"></textarea><button class="btn" id="n_s">${t('save')}</button><button class="btn o" id="n_x">${t('back')}</button></div>`;
+  document.body.appendChild(d);
+  $('#n_x').onclick=()=>d.remove();
+  $('#n_s').onclick=async()=>{
+    const v=i=>$(i).value.trim()||null,num=i=>{const x=parseFloat($(i).value);return isNaN(x)?null:x};
+    if(!v('#n_t'))return;
+    const{error}=await sb.from('tasks').insert({title:v('#n_t'),category:v('#n_c'),location_text:v('#n_l'),description:v('#n_d'),lat:num('#n_la'),lng:num('#n_ln'),client_id:S.user.id});
+    if(error)return alert(t('err'));d.remove();await loadTasks();render();
+  };
+}
+render();
+</script>
+</body>
+</html>
